@@ -76,6 +76,8 @@ details.hist summary{cursor:pointer;min-height:48px;display:flex;flex-wrap:wrap;
 details.hist summary b{font:400 20px Anton,sans-serif}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .gateNote{flex-basis:100%;margin:0}
+.bigStart{font-size:clamp(24px,5vw,32px);padding:16px 34px;min-height:64px;margin-top:8px}
+.startWeek .big{margin-bottom:8px}
 .cheat{margin:12px 0 0;padding:12px 14px;border-radius:10px;background:#140606;border:2px solid transparent;background-clip:padding-box;box-shadow:0 0 0 2px #e3221c,inset 0 0 18px rgba(227,34,28,.25);font-size:15px;line-height:1.45}
 .cheat b{display:block;font:400 22px "Metal Mania",Anton,serif;color:var(--red2);margin-bottom:2px}
 .throne .winName{font:400 clamp(40px,8vw,64px) "Metal Mania",serif;color:var(--red2);line-height:1;text-align:center}
@@ -149,7 +151,7 @@ details.host summary{cursor:pointer;min-height:48px;display:flex;align-items:cen
   <ol class="steps" id="steps">
     <li data-p="submit"><b>1. Lämna in</b><span>Klistra in en Spotify-låt, anonymt</span></li>
     <li data-p="guess"><b>2. Gissa</b><span>Para ihop varje låt med ett namn</span></li>
-    <li data-p="reveal"><b>3. Facit</b><span>Flest rätt vinner, sen startar nästa omgång</span></li>
+    <li data-p="reveal"><b>3. Facit</b><span>Flest rätt vinner. Ny vecka startas på måndag</span></li>
   </ol>
 </div></header>
 
@@ -159,7 +161,7 @@ details.host summary{cursor:pointer;min-height:48px;display:flex;align-items:cen
   <div id="board"></div>
   <div id="host"></div>
 </div></main>
-<p class="note" style="text-align:center;padding:0 0 28px;margin:0">Version 26/11 kl. 11:24</p>
+<p class="note" style="text-align:center;padding:0 0 28px;margin:0">Version 26/11 kl. 11:30</p>
 
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
@@ -169,7 +171,7 @@ import {firebaseConfig} from "./config.js";
 {
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const $=id=>document.getElementById(id);
-const PH={submit:'Inlämning pågår',guess:'Gissning pågår',revealing:'Facit räknas',reveal:'Facit avslöjat',waiting:'Vilar till måndag 07:00'};
+const PH={submit:'Inlämning pågår',guess:'Gissning pågår',revealing:'Facit räknas',reveal:'Facit avslöjat',waiting:'Vilar till måndag'};
 // Måndag 07:00 (enhetens lokala tid, dvs. svensk tid på svenska mobiler)
 function nextMon7(t){const d=new Date(t);d.setHours(7,0,0,0);d.setDate(d.getDate()+((8-d.getDay())%7));if(d.getTime()<=t)d.setDate(d.getDate()+7);return d.getTime()}
 function lastMon7(t){const d=new Date(t);d.setHours(7,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));if(d.getTime()>t)d.setDate(d.getDate()-7);return d.getTime()}
@@ -178,10 +180,27 @@ function countdown(t){const ms=Math.max(0,t-Date.now()),d=Math.floor(ms/864e5),h
 let openTimer=null,opening=false;
 function checkAutoOpen(){
   clearTimeout(openTimer);
+  // Engångsrättning: en omgång som en äldre version öppnade direkt efter avslöjandet (saknar startedAt)
+  // läggs i vila till måndag 07:00. Är det redan måndag dagtid får den stå öppen. Inlämnade låtar ligger kvar.
+  if(G&&G.phase==='submit'&&!G.startedAt&&G.round>1&&canWrite&&!opening){
+    opening=true;const now=Date.now(),mondayDay=now-lastMon7(now)<12*36e5;
+    db.doc('game/state').update({phase:'waiting',opensAt:mondayDay?lastMon7(now):nextMon7(now)})
+      .catch(()=>{}).finally(()=>{opening=false});
+    return;
+  }
   if(!G||G.phase!=='waiting'||!G.opensAt)return;
   const ms=G.opensAt-Date.now();
-  if(ms<=0){if(canWrite&&!opening){opening=true;db.doc('game/state').update({phase:'submit',startedAt:Date.now()}).catch(()=>{}).finally(()=>{opening=false})}}
-  else if(ms<2e9)openTimer=setTimeout(checkAutoOpen,ms+500);
+  if(ms>0&&ms<2e9)openTimer=setTimeout(()=>{sigMain='';renderMain()},ms+500);
+}
+async function startWeek(){
+  if(!G||G.phase!=='waiting'||Date.now()<G.opensAt)return;
+  $('startWeek').disabled=true;say('swMsg','Startar…');
+  try{
+    const st=(await db.doc('game/state').get()).data();
+    if(st?.phase!=='waiting'||st.round!==G.round)return;
+    const now=Date.now();
+    await db.doc('game/state').update({phase:'submit',startedAt:now,opensAt:null,label:'Vecka '+isoWeek(new Date(now))});
+  }catch(e){say('swMsg','Kunde inte starta: '+(e?.message||e),'err');$('startWeek').disabled=false}
 }
 setInterval(()=>{const c=$('cdown');if(c&&G?.opensAt)c.textContent=countdown(G.opensAt)},30000);
 const ORDER=['submit','guess','reveal'];
@@ -239,9 +258,12 @@ function renderMain(){
   const mine=myKey[r];
   if(G.phase==='waiting'){
     const prev=results.find(x=>x.round===G.round-1);
-    m.innerHTML=(prev?winnerHtml(prev,true):'')+`<div class="panel empty"><div class="big">Scenen vilar</div>
-      <p class="lead">${esc(G.label||'Nästa omgång')} öppnar för inlämning <b>${esc(fmtOpen(G.opensAt))}</b>.</p>
-      <p class="sub" style="margin:6px 0 0">Om <span id="cdown">${esc(countdown(G.opensAt))}</span></p></div>`+(prev?factsHtml(prev):'');
+    const ready=Date.now()>=G.opensAt;
+    m.innerHTML=`<div class="panel empty startWeek"><div class="big">${ready?'Dags för ny vecka':'Scenen vilar'}</div>
+      <p class="lead">${ready?'Tryck på knappen för att starta veckan. Då öppnar inlämningen för alla.':`Ny vecka kan startas <b>${esc(fmtOpen(G.opensAt))}</b>, om <span id="cdown">${esc(countdown(G.opensAt))}</span>.`}</p>
+      <div class="row" style="justify-content:center"><button id="startWeek" class="bigStart" ${ready&&canWrite?'':'disabled'}>Starta ny vecka</button></div>
+      <p class="msg" id="swMsg"></p></div>`+(prev?winnerHtml(prev,true)+factsHtml(prev):'');
+    $('startWeek').onclick=startWeek;
     return;
   }
   if(G.phase==='submit'){
@@ -468,14 +490,13 @@ function renderHost(){
   const sig=JSON.stringify([G,prog,Object.keys(gByName)]);if(sig===sigHost){counts();return}sigHost=sig;
   const ph=G?.phase,next='Vecka '+isoWeek();
   $('host').innerHTML=`<details class="panel host" id="hostBox" ${!G||hostOpen?'open':''}><summary>Kontrollpanel</summary>
-    <p class="note">Alla deltagare kan styra quizet härifrån. När någon trycker på Avslöja visas facit och nästa omgång startar direkt. Inlämnade låtar: <b class="cnt">${songs.length}</b></p>
+    <p class="note">Alla deltagare kan styra quizet härifrån. Omgången avslutas med Avslöja på fredag. Sedan vilar appen tills någon startar en ny vecka på måndag. Inlämnade låtar: <b class="cnt">${songs.length}</b></p>
     <div class="row">
       ${!G?'<button id="hStart">Starta första omgången</button>':''}
       ${ph==='submit'?gateBtn('hGuess','Stäng inlämning och öppna gissning','inl'):''}
-      ${ph==='guess'?gateBtn('hReveal','Avslöja facit och starta nästa omgång','giss'):''}
+      ${ph==='guess'?gateBtn('hReveal','Avslöja facit och avsluta veckan','giss'):''}
       ${ph==='revealing'?'<button id="hReveal">Slutför avslöjandet</button>':''}
       ${ph==='reveal'?'<button id="hNew">Starta ny omgång</button>':''}
-      ${ph==='waiting'?'<button id="hOpenNow">Öppna nästa omgång nu</button>':''}
     </div><p class="msg ${hostNote?'good':''}" id="hMsg">${esc(hostNote||'')}</p>
     ${G?`<h3>Deltagare (${G.players.length})</h3>
     <div class="chips">${G.players.map((p,i)=>`<span class="chip">${esc(p)}<button class="x" data-i="${i}" aria-label="Ta bort ${esc(p)}">×</button></span>`).join('')}</div>
@@ -495,7 +516,6 @@ function renderHost(){
   if($('hGuessAny'))$('hGuessAny').onclick=()=>armed('hGuessAny',()=>setPhase('guess'));
   if($('hRevealAny'))$('hRevealAny').onclick=()=>armed('hRevealAny',reveal);
   if($('hNew'))$('hNew').onclick=newRound;
-  if($('hOpenNow'))$('hOpenNow').onclick=()=>armed('hOpenNow',async()=>{try{await db.doc('game/state').update({phase:'submit',startedAt:Date.now(),label:$('rlabel').value.trim()||G.label})}catch(e){say('hMsg','Fel: '+(e?.message||e),'err')}});
   if($('hNuke')){
     $('hNuke').onclick=()=>{$('nukeAsk').hidden=false;$('hNuke').disabled=true;$('nukeYes').focus()};
     $('nukeNo').onclick=()=>{$('nukeAsk').hidden=true;$('hNuke').disabled=false};
@@ -618,14 +638,11 @@ async function reveal(){
       scores.push({name:g.name,points,max});
     }
     await db.doc('results/'+r).set({round:G.round,label:G.label||'',answers:list.map(({n,url,name})=>({n,url,name})),scores,at:Date.now()});
-    // Nästa omgång öppnar måndag 07:00. Har en ny vecka redan börjat sedan omgången startade öppnar den direkt.
+    // Appen vilar tills någon trycker på Starta ny vecka, tidigast måndag 07:00.
+    // Har en ny vecka redan börjat sedan omgången startade går knappen att trycka på direkt.
     const now=Date.now();
-    if(G.startedAt&&lastMon7(now)>G.startedAt)
-      await db.doc('game/state').update({round:G.round+1,phase:'submit',label:'Vecka '+isoWeek(new Date(now)),startedAt:now,opensAt:null});
-    else{
-      const at=nextMon7(now);
-      await db.doc('game/state').update({round:G.round+1,phase:'waiting',label:'Vecka '+isoWeek(new Date(at)),opensAt:at});
-    }
+    const at=G.startedAt&&lastMon7(now)>G.startedAt?lastMon7(now):nextMon7(now);
+    await db.doc('game/state').update({round:G.round+1,phase:'waiting',label:'Vecka '+isoWeek(new Date(Math.max(at,now))),opensAt:at});
   }catch(e){say('hMsg','Kunde inte räkna: '+(e?.message||e),'err');$('hReveal').disabled=false}
 }
 async function newRound(){
