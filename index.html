@@ -159,7 +159,7 @@ details.host summary{cursor:pointer;min-height:48px;display:flex;align-items:cen
   <div id="board"></div>
   <div id="host"></div>
 </div></main>
-<p class="note" style="text-align:center;padding:0 0 28px;margin:0">Version 26/11 kl. 11:21</p>
+<p class="note" style="text-align:center;padding:0 0 28px;margin:0">Version 26/11 kl. 11:24</p>
 
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
@@ -389,34 +389,30 @@ function podiumHtml(rows,teaser){
       <polygon points="${burstPts}" fill="#ffcc00" stroke="#e3221c" stroke-width="2" stroke-linejoin="round"/>
       <circle r="4.5" fill="#fff"/>
     </g></g>
+    <g id="pdSword">
+      <path d="M8-2.2L39-2.2L47 0L39 2.2L8 2.2Z" fill="#eef0f3" stroke="#6e717a" stroke-width=".7" stroke-linejoin="round"/>
+      <path d="M10 0H37" stroke="#a3a7b0" stroke-width=".9"/>
+      <rect x="5.5" y="-7" width="2.8" height="14" rx="1.2" fill="#d4a83a" stroke="#6b4f12" stroke-width=".6"/>
+      <rect x="-1" y="-1.6" width="7" height="3.2" rx="1" fill="#3a2a1a"/>
+      <circle cx="-2" cy="0" r="2.3" fill="#d4a83a" stroke="#6b4f12" stroke-width=".6"/>
+    </g>
     <g id="pdBrawl">
       <g class="pdShake">
-        <!-- vänster krigare: svärd -->
-        <path d="M-34 0L-31-30Q-25-37-18-30L-16 0Z" fill="#0b0b0c" stroke="#e3221c" stroke-opacity=".65"/>
+        <path d="M-36 0L-32-30Q-25-37-18-30L-14 0Z" fill="#0b0b0c" stroke="#e3221c" stroke-opacity=".65"/>
         <path d="M-32-38C-31-50-17-50-17-38C-17-32-31-31-32-38Z" fill="#17171a" stroke="#e3221c" stroke-opacity=".65"/>
-        <circle cx="-21" cy="-38" r="1.4" fill="#ff3b2f" class="pdEye"/>
-        <path d="M-19-28L-9-38" stroke="#e3221c" stroke-opacity=".6" stroke-width="5.5" stroke-linecap="round"/>
-        <path d="M-19-28L-9-38" stroke="#0b0b0c" stroke-width="3.8" stroke-linecap="round"/>
-        <path d="M-12-43L-5-34" stroke="#a3a7b0" stroke-width="2.4" stroke-linecap="round"/>
-        <path d="M-8-39L2-42" stroke="#e6e8ec" stroke-width="3" stroke-linecap="round"/>
-        <!-- avbruten svärdsspets som flyger iväg -->
-        <g transform="translate(-6 -62) rotate(-35)"><path d="M0 0L11 0L14 1.5L11 3L0 3Z" fill="#e6e8ec"/></g>
-        <path d="M-14-58l-6-3M-15-63l-6 0" stroke="#e6e8ec" stroke-opacity=".6" stroke-width="1.2" stroke-linecap="round"/>
-        <!-- höger krigare: motorsåg -->
-        <path d="M16 0L18-30Q25-37 31-30L34 0Z" fill="#0b0b0c" stroke="#e3221c" stroke-opacity=".65"/>
-        <path d="M17-38C17-50 31-50 32-38C31-31 17-32 17-38Z" fill="#17171a" stroke="#e3221c" stroke-opacity=".65"/>
-        <circle cx="21" cy="-38" r="1.4" fill="#ff3b2f" class="pdEye"/>
-        <path d="M20-27L12-30M22-22L13-26" stroke="#0b0b0c" stroke-width="3.6" stroke-linecap="round"/>
-        <rect x="6" y="-35" width="10" height="9" rx="2" fill="#e3221c" stroke="#000" stroke-width=".8"/>
-        <rect x="-10" y="-33" width="17" height="5" rx="2.5" fill="#a3a7b0" stroke="#000" stroke-width=".6"/>
-        <polyline points="-9,-33 -7.5,-35 -6,-33 -4.5,-35 -3,-33 -1.5,-35 0,-33 1.5,-35 3,-33 4.5,-35 6,-33" fill="none" stroke="#e6e8ec" stroke-width=".9"/>
-        <path d="M9-36l-2-6M13-36l1-7" stroke="#5c5c66" stroke-width="1.4" stroke-linecap="round" opacity=".8"/>
+        <circle cx="-21" cy="-39" r="1.5" fill="#ff3b2f" class="pdEye"/>
+        <path d="M36 0L32-30Q25-37 18-30L14 0Z" fill="#0b0b0c" stroke="#e3221c" stroke-opacity=".65"/>
+        <path d="M32-38C31-50 17-50 17-38C17-32 31-31 32-38Z" fill="#17171a" stroke="#e3221c" stroke-opacity=".65"/>
+        <circle cx="21" cy="-39" r="1.5" fill="#ff3b2f" class="pdEye"/>
+        <path d="M-21-29L-12-46M21-29L12-46" stroke="#e3221c" stroke-opacity=".6" stroke-width="5.5" stroke-linecap="round"/>
+        <path d="M-21-29L-12-46M21-29L12-46" stroke="#0b0b0c" stroke-width="3.8" stroke-linecap="round"/>
+        <use href="#pdSword" transform="translate(-12 -46) rotate(-50)"/>
+        <use href="#pdSword" transform="translate(12 -46) scale(-1 1) rotate(-50)"/>
       </g>
-      <!-- gnistor där svärd möter såg -->
-      <g transform="translate(-2 -40) scale(.36)"><g class="pdClash">
+      <g transform="translate(0 -60) scale(.42)"><g class="pdClash">
         <polygon points="${burstPts}" fill="#ffcc00" stroke="#e3221c" stroke-width="2" stroke-linejoin="round"/><circle r="4" fill="#fff"/>
       </g></g>
-      <g fill="#ffcc00"><path transform="translate(-6 -50) scale(.6)" d="${star}"/><path transform="translate(9 -49) scale(.5)" d="${star}"/><path transform="translate(4 -27) scale(.45)" d="${star}"/></g>
+      <g fill="#ffcc00"><path transform="translate(-9 -70) scale(.6)" d="${star}"/><path transform="translate(10 -68) scale(.5)" d="${star}"/></g>
     </g>
   </defs>
   <rect y="-34" width="360" height="${H}" fill="url(#pdGlow)"/>
