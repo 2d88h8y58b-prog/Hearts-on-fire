@@ -87,6 +87,9 @@ details.hist summary b{font:400 20px Anton,sans-serif}
 .pdNum{font-family:"Metal Mania",Anton,serif;fill:#e3221c;stroke:#000;stroke-width:1.2;paint-order:stroke}
 .pdName{font-family:Anton,sans-serif;fill:#f2efe8}
 .pdEmpty{fill:#6e6b66}
+.pdFanPts{font:600 11px Barlow,sans-serif;fill:#a9a6a0}
+.crowdList{margin:10px 0 0;color:var(--muted);font-size:15px;line-height:1.6}
+.crowdList b{color:var(--ink)}
 .podLegend{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:8px}
 .podLegend li{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:2px 10px;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:8px 12px}
 .podLegend li:first-child{border-color:var(--red);box-shadow:0 0 18px rgba(227,34,28,.35)}
@@ -156,6 +159,7 @@ details.host summary{cursor:pointer;min-height:48px;display:flex;align-items:cen
   <div id="board"></div>
   <div id="host"></div>
 </div></main>
+<p class="note" style="text-align:center;padding:0 0 28px;margin:0">Version 26/11 kl. 11:06</p>
 
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
@@ -320,12 +324,22 @@ function podiumHtml(rows,teaser){
   const p=[rows[0],rows[1],rows[2]];
   const short=n=>n.length>12?n.split(/\s+/)[0]:n;
   const nm=(r,x,y,max,w)=>r?`<text x="${x}" y="${y}" text-anchor="middle" class="pdName" font-size="${fitName(short(r.name),max,w)}">${esc(short(r.name))}</text>`:`<text x="${x}" y="${y}" text-anchor="middle" class="pdName pdEmpty" font-size="14">ledig plats</text>`;
-  const svg=`<svg class="podium" viewBox="0 -34 360 364" role="img" aria-label="Prispall: ${esc(p.filter(Boolean).map((r,i)=>(i+1)+'. '+r.name).join(', '))}">
+  // Alla utanför topp 3 står på marken framför pallen, max 6 per rad
+  const rest=teaser?[]:rows.slice(3),PER=5,crowdRows=Math.ceil(rest.length/PER),EXTRA=crowdRows?crowdRows*96+14:0,H=364+EXTRA;
+  const crowd=rest.map((r,i)=>{
+    const row=Math.floor(i/PER),col=i%PER,inRow=Math.min(PER,rest.length-row*PER);
+    const x=Math.round(180+(col-(inRow-1)/2)*68),y=330+row*96+70;
+    const nmS=r.name.length>9?r.name.split(/\s+/)[0]:r.name;
+    return `<use href="#pdFan" transform="translate(${x} ${y}) scale(${i%2?-1.45:1.45} 1.45)"/>
+      <text x="${x}" y="${y+16}" text-anchor="middle" class="pdName" font-size="${fitName(nmS,14,64)}">${esc(nmS)}</text>
+      <text x="${x}" y="${y+30}" text-anchor="middle" class="pdFanPts">${i+4}. · ${r.points} p</text>`}).join('');
+  const svg=`<svg class="podium" viewBox="0 -34 360 ${H}" role="img" aria-label="Prispall: ${esc(p.filter(Boolean).map((r,i)=>(i+1)+'. '+r.name).join(', '))}">
   <defs>
     <radialGradient id="pdGlow" cx="50%" cy="38%" r="55%"><stop offset="0" stop-color="#ff3b2f" stop-opacity=".75"/><stop offset=".45" stop-color="#8f0d08" stop-opacity=".35"/><stop offset="1" stop-color="#0b0b0c" stop-opacity="0"/></radialGradient>
     <linearGradient id="pdStone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a4a52"/><stop offset=".12" stop-color="#2c2c32"/><stop offset="1" stop-color="#141417"/></linearGradient>
     <linearGradient id="pdCape" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a0605"/><stop offset="1" stop-color="#6e0a06"/></linearGradient>
     <linearGradient id="pdFire" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ffcc00"/><stop offset=".5" stop-color="#ff4b2b"/><stop offset="1" stop-color="#e3221c" stop-opacity="0"/></linearGradient>
+    <linearGradient id="pdGround" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a0b09" stop-opacity=".85"/><stop offset="1" stop-color="#0b0b0c" stop-opacity=".2"/></linearGradient>
     <filter id="pdBlur"><feGaussianBlur stdDeviation="1.6"/></filter>
     <g id="pdCult">
       <path d="M0 0C0-18 8-34 24-34C34-34 40-26 42-18L50-6L52 0Z" fill="#0b0b0c" stroke="#e3221c" stroke-opacity=".6" stroke-width="1.2"/>
@@ -333,8 +347,16 @@ function podiumHtml(rows,teaser){
       <path d="M38-22C42-34 56-33 58-20C58-12 51-8 44-10Z" fill="#17171a" stroke="#e3221c" stroke-opacity=".6" stroke-width="1.2"/>
       <circle cx="52" cy="-15" r="1.3" fill="#ff3b2f" class="pdEye"/>
     </g>
+    <g id="pdFan">
+      <path d="M7-18L14-35" stroke="#e3221c" stroke-opacity=".7" stroke-width="5.5" stroke-linecap="round"/>
+      <path d="M7-18L14-35" stroke="#0b0b0c" stroke-width="3.6" stroke-linecap="round"/>
+      <path d="M13-36L11.5-44M15.5-36L17.5-43" stroke="#0b0b0c" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M-10 0L-11-18Q0-25 11-18L10 0Z" fill="#0b0b0c" stroke="#e3221c" stroke-opacity=".6"/>
+      <path d="M-7-27Q-10-16-8-11L-4-20ZM7-27Q10-16 8-11L4-20Z" fill="#0b0b0c" stroke="#e3221c" stroke-opacity=".45"/>
+      <circle cy="-28" r="6.5" fill="#0b0b0c" stroke="#e3221c" stroke-opacity=".6"/>
+    </g>
   </defs>
-  <rect y="-34" width="360" height="364" fill="url(#pdGlow)"/>
+  <rect y="-34" width="360" height="${H}" fill="url(#pdGlow)"/>
   <g class="pdBolts" fill="none" stroke="#ffcc00" stroke-width="2" stroke-linejoin="round" opacity=".55">
     <polyline points="40,10 58,48 46,52 70,96"/><polyline points="322,6 304,40 318,44 292,92"/>
   </g>
@@ -364,12 +386,15 @@ function podiumHtml(rows,teaser){
   <text x="70" y="268" text-anchor="middle" class="pdNum" font-size="30">II</text>
   <text x="290" y="284" text-anchor="middle" class="pdNum" font-size="26">III</text>
   ${nm(p[0],180,262,22,112)}${nm(p[1],70,300,17,92)}${nm(p[2],290,310,16,92)}
+  ${EXTRA?`<rect y="330" width="360" height="${EXTRA}" fill="url(#pdGround)"/><path d="M0 330H360" stroke="#e3221c" stroke-opacity=".35"/>`:''}
+  ${crowd}
   <rect y="312" width="360" height="18" fill="#0b0b0c" opacity=".55" filter="url(#pdBlur)"/>
 </svg>`;
   if(teaser)return `<figure class="podWrap">${svg}</figure>`;
   const tie=rows[1]&&rows[0].points===rows[1].points;
+  const crowdList=rest.length?`<p class="crowdList"><b>Folkhopen:</b> ${rest.map((r,i)=>`${i+4}. ${esc(r.name)} ${r.points} p`).join(' · ')}</p>`:'';
   const legend=`<ol class="podLegend">${p.map((r,i)=>r?`<li><span class="pdRank">${['I','II','III'][i]}</span><b>${esc(r.name)}</b><span class="pdTitle">${TITLES[i]}</span><span class="pdPts">${r.points} p</span></li>`:'').join('')}</ol>`;
-  return `<figure class="podWrap">${svg}${legend}${tie?'<p class="note">Delad tron! Lika poäng i toppen, tronen går till den som kommer först i alfabetet.</p>':''}</figure>`;
+  return `<figure class="podWrap">${svg}${legend}${crowdList}${tie?'<p class="note">Delad tron! Lika poäng i toppen, tronen går till den som kommer först i alfabetet.</p>':''}</figure>`;
 }
 function renderBoard(){
   const sig=JSON.stringify(results.map(x=>x.id+x.at));if(sig===sigBoard)return;sigBoard=sig;
