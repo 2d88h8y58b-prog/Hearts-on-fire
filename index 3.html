@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Veckans låt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Metal+Mania&family=Anton&family=Barlow:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: hårdrock i fikarummet, högt och tydligt men lätt att använda
+   IDEA: en förstärkarstack på scen, varje låt är ett spår på setlistan
+   PICTURE: blixt över högtalargaller i toppen; låtkorten är setlistan
+   COLOUR+TYPE: svart, blodrött, benvitt, stål; Metal Mania titel, Anton rubriker, Barlow brödtext
+   LAYOUT: scenband med steg, en kolumn med kort, värdpanel hopfälld sist */
+:root{color-scheme:dark;--bg:#0b0b0c;--card:#16161a;--card2:#1e1e24;--ink:#f2efe8;--muted:#a9a6a0;--line:#34343c;--red:#e3221c;--red2:#ff4b2b;--ok:#5fd38a}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 Barlow,system-ui,sans-serif;overflow-x:clip}
+.band{padding:clamp(24px,4vw,56px) max(5vw,16px)}
+.wrap{max-width:860px;margin:0 auto}
+.stage{position:relative;overflow:hidden;background:
+  radial-gradient(ellipse at 50% 120%,rgba(227,34,28,.55),transparent 60%),
+  radial-gradient(circle,#26262c 1.6px,transparent 2px) 0 0/12px 12px,#0e0e10;border-bottom:4px solid var(--red)}
+.stage .wrap{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 170px;gap:20px;align-items:center}
+.bolt{width:100%;height:auto;filter:drop-shadow(0 0 18px rgba(255,75,43,.7))}
+h1{font-family:"Metal Mania",Anton,serif;font-weight:400;font-size:clamp(46px,10vw,88px);line-height:.95;margin:0;color:var(--ink);text-shadow:0 3px 0 var(--red),0 0 30px rgba(227,34,28,.6)}
+.sub{margin:10px 0 0;font-family:Anton,sans-serif;font-size:20px;color:var(--muted)}
+.sub b{color:var(--ink);font-weight:400}
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:22px 0 0;padding:0;list-style:none;grid-column:1/-1}
+.steps li{background:rgba(0,0,0,.55);border:2px solid var(--line);border-radius:10px;padding:10px 12px}
+.steps li b{display:block;font-family:Anton,sans-serif;font-weight:400;font-size:19px}
+.steps li span{font-size:14px;color:var(--muted)}
+.steps li.on{border-color:var(--red);background:rgba(227,34,28,.18);box-shadow:0 0 0 1px var(--red),0 0 22px rgba(227,34,28,.35)}
+.steps li.on b::after{content:" ← nu";color:var(--red2)}
+.steps li.done{opacity:.55}
+h2{font-family:Anton,sans-serif;font-weight:400;font-size:clamp(26px,4vw,34px);line-height:1.1;margin:0 0 6px}
+h3{font-family:Anton,sans-serif;font-weight:400;font-size:20px;margin:18px 0 8px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:clamp(16px,3vw,26px);margin-bottom:20px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+.lead{margin:0 0 4px;color:var(--muted)}
+label{display:block;font-weight:700;margin:16px 0 6px}
+input,select,textarea{width:100%;font:16px Barlow,system-ui,sans-serif;padding:12px;border:2px solid var(--line);border-radius:10px;background:#0f0f12;color:var(--ink);min-height:48px}
+input:focus,select:focus,textarea:focus{border-color:var(--red)}
+:focus-visible{outline:3px solid var(--red2);outline-offset:2px}
+select.dup{border-color:#ffb02e}
+textarea{min-height:120px}
+button{font:400 19px Anton,sans-serif;min-height:48px;padding:10px 22px;border-radius:10px;border:0;background:var(--red);color:#fff;cursor:pointer;box-shadow:0 4px 0 #7d0f0b}
+button:hover{background:var(--red2)}
+button:active{transform:translateY(2px);box-shadow:0 2px 0 #7d0f0b}
+button.alt{background:var(--card2);color:var(--ink);box-shadow:0 4px 0 #000;border:1px solid var(--line)}
+button.armed{background:#ffb02e;color:#111}
+button:disabled{opacity:.45;cursor:default;transform:none}
+.row{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px;align-items:center}
+.note{color:var(--muted);font-size:15px;margin:8px 0 0}
+.msg{font-weight:700;margin:12px 0 0;min-height:1.2em}.msg.err{color:#ff6b5e}.msg.good{color:var(--ok)}
+.done-card{display:flex;gap:14px;align-items:center;background:rgba(95,211,138,.1);border:1px solid rgba(95,211,138,.4);border-radius:12px;padding:12px 14px;margin-top:16px}
+.done-card .tick{font-family:Anton,sans-serif;font-size:28px;color:var(--ok)}
+.meter{height:10px;border-radius:99px;background:#0f0f12;border:1px solid var(--line);overflow:hidden;margin-top:10px}
+.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--red),var(--red2));transition:width .3s}
+.tapes{display:grid;gap:12px;margin-top:16px}
+.tape{display:grid;grid-template-columns:72px minmax(0,1fr);gap:16px;align-items:center;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:14px;position:relative}
+.tape.own{opacity:.7}
+.num{width:72px;height:72px;border-radius:10px;background:#09090a;border:3px solid #a3a7b0;box-shadow:inset 0 0 0 2px #3a3c42,0 2px 0 #000;display:grid;place-items:center;font:400 34px Anton,sans-serif;color:var(--red2)}
+a.play{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:8px 16px;border-radius:99px;background:var(--ink);color:#111;font-weight:700;text-decoration:none}
+a.play:hover{background:#fff}
+a.play::before{content:"";width:0;height:0;border-left:11px solid var(--red);border-top:7px solid transparent;border-bottom:7px solid transparent}
+.tape select{margin-top:10px}
+.mine{font-weight:700;color:var(--muted);margin-top:8px}
+.who{font:400 26px Anton,sans-serif;line-height:1.1;margin-bottom:6px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:10px 6px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:600;font-size:14px}
+td.n,th.n{text-align:right;white-space:nowrap}
+tr.win td{font-weight:700;color:var(--ink)}
+.badge{display:inline-block;background:var(--red);color:#fff;border-radius:6px;padding:1px 8px;font-size:13px;font-weight:700;margin-left:8px}
+details.hist{border-top:1px solid var(--line);padding:6px 0}
+details.hist summary{cursor:pointer;min-height:48px;display:flex;flex-wrap:wrap;gap:2px 12px;align-items:center}
+details.hist summary b{font:400 20px Anton,sans-serif}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.gateNote{flex-basis:100%;margin:0}
+.throne{background:radial-gradient(ellipse at 50% 0%,rgba(227,34,28,.22),transparent 60%),var(--card);border-color:#5a1410}
+.podWrap{margin:14px 0 0}
+.podium{display:block;width:100%;max-width:560px;height:auto;margin:0 auto}
+.pdNum{font-family:"Metal Mania",Anton,serif;fill:#e3221c;stroke:#000;stroke-width:1.2;paint-order:stroke}
+.pdName{font-family:Anton,sans-serif;fill:#f2efe8}
+.pdEmpty{fill:#6e6b66}
+.podLegend{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:8px}
+.podLegend li{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:2px 10px;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+.podLegend li:first-child{border-color:var(--red);box-shadow:0 0 18px rgba(227,34,28,.35)}
+.pdRank{grid-row:span 2;font:400 26px "Metal Mania",serif;color:var(--red2);text-align:center}
+.podLegend b{font:400 20px Anton,sans-serif;overflow-wrap:anywhere}
+.pdTitle{grid-column:2;color:var(--muted);font-size:14px}
+.pdPts{grid-row:1/span 2;grid-column:3;font:400 22px Anton,sans-serif;white-space:nowrap}
+@media(prefers-reduced-motion:no-preference){.pdZap,.pdBolts{animation:zap 3.2s infinite}.pdEye{animation:glare 2.4s ease-in-out infinite}@keyframes glare{50%{opacity:.35}}.pdFlames{animation:lick 1.2s ease-in-out infinite alternate;transform-origin:180px 182px}@keyframes lick{to{transform:scaleY(1.12)}}}
+.prog .progTop{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font:400 22px Anton,sans-serif}
+.prog .chips{margin-top:12px}
+.prog .chip{padding:5px 12px;font-size:15px}
+.prog .chip.ok{border-color:var(--ok);color:var(--ink);background:rgba(95,211,138,.12)}
+.prog .chip.wait{color:var(--muted);opacity:.7}
+.chip{display:inline-flex;align-items:center;gap:4px;background:var(--card2);border:1px solid var(--line);border-radius:99px;padding:4px 4px 4px 14px;font-weight:600}
+.chip .x{min-height:36px;min-width:36px;padding:0 10px;font:700 18px Barlow,sans-serif;background:transparent;color:var(--muted);box-shadow:none;border-radius:99px}
+.chip .x:hover{background:var(--red);color:#fff}
+.chip .x.armed{background:#ffb02e;color:#111;font-size:14px}
+.addrow{display:flex;gap:10px;margin-top:12px}
+.addrow button{flex:none}
+.hazard{margin-top:28px;padding:14px;border-radius:14px;background:repeating-linear-gradient(-45deg,#ffcc00 0 18px,#111 18px 36px)}
+.nuke{display:flex;flex-direction:column;align-items:center;width:100%;padding:16px 12px;background:radial-gradient(circle at 50% 35%,#ff3b2f,#8f0d08 75%);border:3px solid #111;border-radius:10px;box-shadow:0 6px 0 #3d0503,inset 0 2px 0 rgba(255,255,255,.35);color:#fff}
+.nuke:disabled{opacity:.85}
+.nuke:hover{background:radial-gradient(circle at 50% 35%,#ff5a40,#a8110a 75%)}
+.nuke .nk1{font:400 clamp(30px,7vw,46px)/1 "Metal Mania",Anton,serif;text-shadow:0 3px 0 #000}
+.nuke .nk2{font:400 18px Anton,sans-serif;margin-top:6px;color:#ffcc00}
+@media(prefers-reduced-motion:no-preference){.nuke:not(:disabled){animation:throb 1.6s ease-in-out infinite}@keyframes throb{50%{box-shadow:0 6px 0 #3d0503,0 0 26px rgba(255,59,47,.75),inset 0 2px 0 rgba(255,255,255,.35)}}}
+.nukeAsk{background:#111;border-radius:10px;padding:14px;margin-top:12px;color:var(--ink)}
+.nukeAsk p{margin:0}
+.nukeYes{background:#ffcc00;color:#111;box-shadow:0 4px 0 #7a6200}
+.nukeYes:hover{background:#ffe066}
+.player{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
+.player button.play{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:8px 16px;border-radius:99px;background:var(--ink);color:#111;font:700 16px Barlow,sans-serif;box-shadow:none;border:0}
+.player button.play::before{content:"";width:0;height:0;border-left:11px solid var(--red);border-top:7px solid transparent;border-bottom:7px solid transparent}
+.player button.play[aria-expanded="true"]{background:var(--red);color:#fff}
+.player button.play[aria-expanded="true"]::before{border:0;width:10px;height:12px;border-left:3px solid #fff;border-right:3px solid #fff;box-sizing:border-box}
+.appLink{color:var(--muted);font-size:15px;text-decoration:underline;min-height:44px;display:inline-flex;align-items:center}
+.embed{flex-basis:100%}.embed:empty{display:none}
+.embed iframe{width:100%;border:0;border-radius:12px;display:block;margin-top:6px}
+details.host summary{cursor:pointer;min-height:48px;display:flex;align-items:center;font:400 24px Anton,sans-serif}
+.empty{text-align:center;padding:26px 10px}
+.empty .big{font:400 clamp(40px,8vw,64px) "Metal Mania",serif;color:var(--red2);line-height:1}
+@media(prefers-reduced-motion:no-preference){.bolt{animation:zap 4s infinite}@keyframes zap{0%,88%,100%{opacity:1}90%{opacity:.35}92%{opacity:1}94%{opacity:.5}}}
+@media(max-width:600px){.stage .wrap{grid-template-columns:minmax(0,1fr) 90px}.steps{grid-template-columns:1fr}.steps li span{display:none}.tape{grid-template-columns:54px minmax(0,1fr);gap:12px}.num{width:54px;height:54px;font-size:26px}}
+</style>
+</head>
+<body>
+<header class="band stage"><div class="wrap">
+  <div>
+    <h1>Veckans låt</h1>
+    <p class="sub" id="roundLabel">Laddar…</p>
+  </div>
+  <svg class="bolt" viewBox="0 0 120 200" aria-hidden="true">
+    <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd0c4"/><stop offset=".35" stop-color="#ff4b2b"/><stop offset="1" stop-color="#9c0f0a"/></linearGradient></defs>
+    <path d="M78 4 18 112h38L34 196l70-116H64z" fill="url(#bg)" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M78 4 18 112h38" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="2"/>
+  </svg>
+  <ol class="steps" id="steps">
+    <li data-p="submit"><b>1. Lämna in</b><span>Klistra in en Spotify-låt, anonymt</span></li>
+    <li data-p="guess"><b>2. Gissa</b><span>Para ihop varje låt med ett namn</span></li>
+    <li data-p="reveal"><b>3. Facit</b><span>Flest rätt vinner, sen startar nästa omgång</span></li>
+  </ol>
+</div></header>
+
+<main class="band"><div class="wrap">
+  <div id="prog"></div>
+  <div id="main"><div class="panel"><p class="note" id="loadNote">Stämmer gitarrerna…</p></div></div>
+  <div id="board"></div>
+  <div id="host"></div>
+</div></main>
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {getAuth,signInAnonymously,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {getFirestore,doc,collection,getDoc,getDocs,setDoc,updateDoc,deleteDoc,onSnapshot,query,where,orderBy} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {firebaseConfig} from "./config.js";
+{
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=id=>document.getElementById(id);
+const PH={submit:'Inlämning pågår',guess:'Gissning pågår',revealing:'Facit räknas',reveal:'Facit avslöjat'};
+const ORDER=['submit','guess','reveal'];
+let db=null,user=null,uid=null,isAdmin=false,canWrite=true;
+let G=null,songs=[],myKey={},myGuess={},results=[],unSongs=null,curRk=null;
+let sigMain='',sigHost='',sigBoard='',hostOpen=false,hostNote=null;
+const rk=()=>G?'r'+G.round:null;
+const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+function isoWeek(d=new Date()){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const day=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-day);const y=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y)/864e5+1)/7)}
+
+function okLink(u){try{const x=new URL(String(u).trim());return x.protocol==='https:'&&(/(^|\.)spotify\.com$/.test(x.hostname)||x.hostname==='spotify.link')}catch(e){return false}}
+const MOBILE=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+function spId(u){try{const m=/\/(track|album|playlist|episode|show|artist)\/([A-Za-z0-9]+)/.exec(new URL(u).pathname);return m?{type:m[1],id:m[2]}:null}catch(e){return null}}
+function playBtn(u,n){
+  if(!okLink(u))return '<span class="note">Ogiltig länk</span>';
+  const sp=spId(u);
+  if(!sp)return `<a class="play" href="${esc(u)}" target="spotify">Spela låt ${n} i Spotify</a>`;
+  const appHref=MOBILE?`spotify:${sp.type}:${sp.id}`:u;
+  return `<div class="player"><button class="play" type="button" data-type="${esc(sp.type)}" data-id="${esc(sp.id)}" aria-expanded="false">Lyssna på låt ${n} här</button>`
+    +`<a class="appLink" href="${esc(appHref)}" ${MOBILE?'':'target="spotify"'}>Öppna i Spotify-appen</a><div class="embed"></div></div>`;
+}
+// Bara en spelare öppen åt gången: öppnar man en ny stängs den förra (och slutar spela).
+document.addEventListener('click',e=>{
+  const btn=e.target.closest('button.play[data-id]');if(!btn)return;
+  const box=btn.parentElement.querySelector('.embed'),isOpen=btn.getAttribute('aria-expanded')==='true';
+  for(const o of document.querySelectorAll('button.play[aria-expanded="true"]')){o.setAttribute('aria-expanded','false');o.parentElement.querySelector('.embed').innerHTML=''}
+  if(isOpen)return;
+  const f=document.createElement('iframe');
+  f.src=`https://open.spotify.com/embed/${encodeURIComponent(btn.dataset.type)}/${encodeURIComponent(btn.dataset.id)}?utm_source=generator&theme=0`;
+  f.height=(btn.dataset.type==='track'||btn.dataset.type==='episode')?'152':'352';f.title='Spotify-spelare';
+  f.allow='autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture';
+  box.appendChild(f);btn.setAttribute('aria-expanded','true');
+});
+function nameSelect(id,val,extra=''){
+  const ps=(G?.players||[]);
+  return `<select id="${id}" ${extra}><option value="">Välj namn…</option>${ps.map(p=>`<option ${p===val?'selected':''}>${esc(p)}</option>`).join('')}</select>`;
+}
+function say(id,t,cls){const e=$(id);if(e){e.textContent=t;e.className='msg '+(cls||'')}}
+function counts(){for(const e of document.querySelectorAll('.cnt'))e.textContent=songs.length}
+
+function renderHead(){
+  $('roundLabel').innerHTML=G?`<b>${esc(G.label||('Omgång '+G.round))}</b> · ${esc(PH[G.phase]||'')}`:'Inget quiz igång ännu';
+  const i=G?ORDER.indexOf(G.phase):-1;
+  for(const li of $('steps').children){const j=ORDER.indexOf(li.dataset.p);li.classList.toggle('on',j===i);li.classList.toggle('done',i>-1&&j<i)}
+}
+
+function answersHtml(res){return `<div class="tapes">${res.answers.map(a=>`<div class="tape"><div class="num">${a.n}</div><div>
+  <div class="who">${esc(a.name||'Okänd')}</div>${playBtn(a.url,a.n)}</div></div>`).join('')}</div>`}
+
+function renderMain(){
+  const m=$('main'),r=rk();
+  const sig=JSON.stringify([G,myKey[r]||null,G?.phase==='submit'?0:songs.map(s=>s.id+s.url),myGuess[r]?.at||0,results.map(x=>x.id+x.at)]);
+  if(sig===sigMain){counts();return}sigMain=sig;
+  if(!G){m.innerHTML=`<div class="panel empty"><div class="big">Tyst på scen</div><p class="lead">${isAdmin?'Öppna värdpanelen längst ner, skriv in deltagarna och starta första omgången.':'Värden har inte startat första omgången än. Kom tillbaka snart!'}</p></div>`;return}
+  const mine=myKey[r];
+  if(G.phase==='submit'){
+    const me=mine?.name||ls.get('vl-name')||'';
+    const prev=results.find(x=>x.round===G.round-1);
+    m.innerHTML=(prev?winnerHtml(prev,true):'')+`<div class="panel"><h2>${mine?'Din låt är inne':'Lämna in din låt'}</h2>
+      <p class="lead">Ingen ser vem som la in vad förrän facit avslöjas.</p>
+      ${mine?`<div class="done-card"><span class="tick">✓</span><div><b>Inlämnad som ${esc(mine.name)}.</b><br><span class="note">Vill du byta? Klistra in en ny länk nedan.</span></div></div>`:''}
+      <label for="me">1. Vem är du?</label>${nameSelect('me',me).replace('</select>','<option value="__new">+ Jag finns inte med, skriv mitt namn</option></select>')}
+      <input id="newName" placeholder="Skriv ditt namn" autocomplete="name" hidden style="margin-top:10px">
+      <label for="url">2. Klistra in Spotify-länken</label><input id="url" type="url" inputmode="url" autocomplete="off" placeholder="https://open.spotify.com/track/…" value="${esc(mine?.url||'')}">
+      <p class="note">I Spotify: tryck på ··· vid låten → Dela → Kopiera länk.</p>
+      <div class="row"><button id="send" ${canWrite?'':'disabled'}>${mine?'Byt låt':'Skicka in låten'}</button></div>
+      <p class="msg" id="sendMsg"></p>
+      <p class="note">Inlämnade låtar hittills: <b class="cnt">${songs.length}</b></p></div>`+(prev?factsHtml(prev):'');
+    $('send').onclick=submitSong;
+    $('me').onchange=()=>{const n=$('me').value==='__new';$('newName').hidden=!n;if(n)$('newName').focus()};
+    $('url').onkeydown=e=>{if(e.key==='Enter')submitSong()};
+  } else if(G.phase==='revealing'){
+    m.innerHTML='<div class="panel empty"><div class="big">Trumvirvel…</div><p class="lead">Facit räknas fram.</p></div>';
+  } else if(G.phase==='guess'){
+    const g=myGuess[r]||{},picks=g.picks||{},me=g.name||mine?.name||ls.get('vl-name')||'';
+    m.innerHTML=`<div class="panel"><h2>Vem la in vilken låt?</h2>
+      <p class="lead">Lyssna, välj ett namn under varje låt och spara. Du kan ändra ända tills facit avslöjas.</p>
+      <label for="gme">Vem är du?</label>${nameSelect('gme',me)}
+      <p class="note" id="gProg"></p><div class="meter"><i id="gBar" style="width:0"></i></div></div>
+      <div class="tapes">${songs.map((s,i)=>{const own=mine&&mine.songId===s.id;return `<div class="tape ${own?'own':''}"><div class="num">${i+1}</div><div>
+        ${playBtn(s.url,i+1)}
+        ${own?'<div class="mine">Din egen låt, den hoppar du över</div>':nameSelect('p_'+s.id,picks[s.id]||'','data-song="'+esc(s.id)+'" aria-label="Vem la in låt '+(i+1)+'"')}
+      </div></div>`}).join('')||'<div class="panel empty"><div class="big">Inga låtar</div><p class="lead">Ingen hann lämna in den här veckan.</p></div>'}</div>
+      <div class="panel" style="margin-top:20px"><div class="row" style="margin-top:0"><button id="saveG" ${canWrite&&songs.length?'':'disabled'}>Spara mina gissningar</button></div>
+      <p class="msg ${g.picks?'good':''}" id="gMsg">${g.picks?'Dina gissningar är sparade.':''}</p></div>`;
+    $('saveG').onclick=saveGuess;
+    for(const s of document.querySelectorAll('select[data-song]'))s.onchange=progress;
+    progress();
+  } else {
+    const res=results.find(x=>x.id===r);
+    if(!res){m.innerHTML='<div class="panel"><p class="note">Facit laddas…</p></div>';return}
+    m.innerHTML=winnerHtml(res,false)+factsHtml(res);
+  }
+}
+function winnerHtml(res,prev){
+  const top=Math.max(0,...res.scores.map(s=>s.points));
+  const win=res.scores.filter(s=>s.points===top&&top>0).map(s=>s.name);
+  return `<div class="panel empty"><p class="lead">${prev?'Vinnare '+esc(res.label||('omgång '+res.round)):'Veckans vinnare'}</p><div class="big">${esc(win.join(' & ')||'Ingen')}</div>${top?`<p class="lead">${top} rätt</p>`:''}</div>`;
+}
+function factsHtml(res){
+  const top=Math.max(0,...res.scores.map(s=>s.points));
+  return `<div class="panel"><h2>Facit ${esc(res.label||('omgång '+res.round))}</h2><h3>Poäng</h3>${scoreTable(res.scores.map(s=>({...s})),top)}<h3>Vem la in vad</h3>${answersHtml(res)}</div>`;
+}
+function nextLabel(l,round){
+  const m=/^Vecka (\d+)$/.exec(String(l||'').trim());
+  return m?'Vecka '+(+m[1]>=52?1:+m[1]+1):'Omgång '+(round+1);
+}
+
+function progress(){
+  const sel=[...document.querySelectorAll('select[data-song]')];
+  const vals=sel.map(s=>s.value).filter(Boolean);
+  for(const s of sel)s.classList.toggle('dup',!!s.value&&vals.filter(v=>v===s.value).length>1);
+  const p=$('gProg'),b=$('gBar');if(!p)return;
+  p.textContent=sel.length?`${vals.length} av ${sel.length} låtar gissade`:'';
+  b.style.width=sel.length?(100*vals.length/sel.length)+'%':'0';
+}
+
+function scoreTable(rows,top){
+  rows.sort((a,b)=>b.points-a.points||a.name.localeCompare(b.name,'sv'));
+  if(!rows.length)return '<p class="note">Inga gissningar lämnades in.</p>';
+  return `<table><thead><tr><th>Namn</th><th class="n">Rätt</th></tr></thead><tbody>${rows.map(s=>`<tr class="${s.points===top&&top>0?'win':''}"><td>${esc(s.name)}${s.points===top&&top>0?'<span class="badge">Vinnare</span>':''}</td><td class="n">${s.points}${s.max!=null?' / '+s.max:''}</td></tr>`).join('')}</tbody></table>`;
+}
+
+// Prispallen: ettan är en ond gud med horn och blixtar, tvåan och trean är knäböjande lärjungar.
+const TITLES=['Mörkrets härskare','Första lärjungen','Ödmjuk tjänare'];
+function fitName(s,max,w){return Math.max(9,Math.min(max,Math.floor(w/(Math.max(1,s.length)*0.52))))}
+function podiumHtml(rows){
+  const p=[rows[0],rows[1],rows[2]];
+  const short=n=>n.length>12?n.split(/\s+/)[0]:n;
+  const nm=(r,x,y,max,w)=>r?`<text x="${x}" y="${y}" text-anchor="middle" class="pdName" font-size="${fitName(short(r.name),max,w)}">${esc(short(r.name))}</text>`:`<text x="${x}" y="${y}" text-anchor="middle" class="pdName pdEmpty" font-size="14">ledig plats</text>`;
+  const svg=`<svg class="podium" viewBox="0 -34 360 364" role="img" aria-label="Prispall: ${esc(p.filter(Boolean).map((r,i)=>(i+1)+'. '+r.name).join(', '))}">
+  <defs>
+    <radialGradient id="pdGlow" cx="50%" cy="38%" r="55%"><stop offset="0" stop-color="#ff3b2f" stop-opacity=".75"/><stop offset=".45" stop-color="#8f0d08" stop-opacity=".35"/><stop offset="1" stop-color="#0b0b0c" stop-opacity="0"/></radialGradient>
+    <linearGradient id="pdStone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a4a52"/><stop offset=".12" stop-color="#2c2c32"/><stop offset="1" stop-color="#141417"/></linearGradient>
+    <linearGradient id="pdCape" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a0605"/><stop offset="1" stop-color="#6e0a06"/></linearGradient>
+    <linearGradient id="pdFire" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ffcc00"/><stop offset=".5" stop-color="#ff4b2b"/><stop offset="1" stop-color="#e3221c" stop-opacity="0"/></linearGradient>
+    <filter id="pdBlur"><feGaussianBlur stdDeviation="1.6"/></filter>
+    <g id="pdCult">
+      <path d="M0 0C0-18 8-34 24-34C34-34 40-26 42-18L50-6L52 0Z" fill="#0b0b0c" stroke="#e3221c" stroke-opacity=".6" stroke-width="1.2"/>
+      <path d="M36-16Q50-8 63-2" fill="none" stroke="#0b0b0c" stroke-width="5" stroke-linecap="round"/>
+      <path d="M38-22C42-34 56-33 58-20C58-12 51-8 44-10Z" fill="#17171a" stroke="#e3221c" stroke-opacity=".6" stroke-width="1.2"/>
+      <circle cx="52" cy="-15" r="1.3" fill="#ff3b2f" class="pdEye"/>
+    </g>
+  </defs>
+  <rect y="-34" width="360" height="364" fill="url(#pdGlow)"/>
+  <g class="pdBolts" fill="none" stroke="#ffcc00" stroke-width="2" stroke-linejoin="round" opacity=".55">
+    <polyline points="40,10 58,48 46,52 70,96"/><polyline points="322,6 304,40 318,44 292,92"/>
+  </g>
+  <g fill="url(#pdFire)" class="pdFlames">
+    <path d="M124 182Q130 150 138 182Z"/><path d="M134 182Q144 136 152 182Z"/><path d="M208 182Q216 138 226 182Z"/><path d="M222 182Q230 152 236 182Z"/><path d="M150 182Q156 160 162 182Z"/><path d="M198 182Q204 160 210 182Z"/>
+  </g>
+  ${p[0]?`<g class="pdGod" transform="translate(180 182) scale(1.3) translate(-180 -182)">
+    <circle cx="180" cy="96" r="44" fill="#ff3b2f" opacity=".18" filter="url(#pdBlur)"/>
+    <path d="M180 92L134 182H226Z" fill="url(#pdCape)" stroke="#ff3b2f" stroke-opacity=".55"/>
+    <path d="M168 96L160 182H200L192 96Z" fill="#0b0b0c" stroke="#ff3b2f" stroke-opacity=".5"/>
+    <path d="M160 100L148 90L162 95ZM200 100L212 90L198 95Z" fill="#a3a7b0"/>
+    <path d="M168 101L146 72L139 52M192 101L214 72L221 52" fill="none" stroke="#ff3b2f" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round" opacity=".75"/><path d="M168 101L146 72L139 52M192 101L214 72L221 52" fill="none" stroke="#0b0b0c" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="180" cy="84" r="11" fill="#0b0b0c" stroke="#ff3b2f" stroke-opacity=".75" stroke-width="1.5"/>
+    <path d="M172 78C158 74 149 60 155 44C159 57 166 65 175 72ZM188 78C202 74 211 60 205 44C201 57 194 65 185 72Z" fill="#e8e1d0"/>
+    <circle cx="176" cy="84" r="2.1" fill="#ff3b2f" class="pdEye"/><circle cx="184" cy="84" r="2.1" fill="#ff3b2f" class="pdEye"/>
+    <g fill="none" stroke="#ffcc00" stroke-width="2.6" stroke-linejoin="round" class="pdZap">
+      <polyline points="139,52 130,38 141,34 128,12"/><polyline points="221,52 230,38 219,34 232,12"/>
+    </g>
+  </g>`:''}
+  <path d="M120 182H240V330H120Z" fill="url(#pdStone)"/><path d="M120 182H240" stroke="#8a8d96" stroke-width="2"/>
+  <path d="M20 230H120V330H20Z" fill="url(#pdStone)"/><path d="M20 230H120" stroke="#8a8d96" stroke-width="2"/>
+  <path d="M240 250H340V330H240Z" fill="url(#pdStone)"/><path d="M240 250H340" stroke="#8a8d96" stroke-width="2"/>
+  <path d="M150 300L158 286L154 274M214 198L206 210M44 316L52 304L48 296M318 270L310 282" stroke="#000" stroke-opacity=".55" fill="none"/>
+  ${p[1]?'<use href="#pdCult" transform="translate(26 230) scale(1.4)"/>':''}
+  ${p[2]?'<use href="#pdCult" transform="translate(334 250) scale(-1.4 1.4)"/>':''}
+  <text x="180" y="226" text-anchor="middle" class="pdNum" font-size="40">I</text>
+  <text x="70" y="268" text-anchor="middle" class="pdNum" font-size="30">II</text>
+  <text x="290" y="284" text-anchor="middle" class="pdNum" font-size="26">III</text>
+  ${nm(p[0],180,262,22,112)}${nm(p[1],70,300,17,92)}${nm(p[2],290,310,16,92)}
+  <rect y="312" width="360" height="18" fill="#0b0b0c" opacity=".55" filter="url(#pdBlur)"/>
+</svg>`;
+  const tie=rows[1]&&rows[0].points===rows[1].points;
+  const legend=`<ol class="podLegend">${p.map((r,i)=>r?`<li><span class="pdRank">${['I','II','III'][i]}</span><b>${esc(r.name)}</b><span class="pdTitle">${TITLES[i]}</span><span class="pdPts">${r.points} p</span></li>`:'').join('')}</ol>`;
+  return `<figure class="podWrap">${svg}${legend}${tie?'<p class="note">Delad tron! Lika poäng i toppen, tronen går till den som kommer först i alfabetet.</p>':''}</figure>`;
+}
+function renderBoard(){
+  const sig=JSON.stringify(results.map(x=>x.id+x.at));if(sig===sigBoard)return;sigBoard=sig;
+  if(!results.length){$('board').innerHTML='';return}
+  const tot={};for(const r of results)for(const s of r.scores)tot[s.name]=(tot[s.name]||0)+s.points;
+  const rows=Object.entries(tot).map(([name,points])=>({name,points}));
+  const top=Math.max(0,...rows.map(r=>r.points));
+  const hist=[...results].sort((a,b)=>b.round-a.round).map(res=>{
+    const t=Math.max(0,...res.scores.map(s=>s.points));
+    const win=res.scores.filter(s=>s.points===t&&t>0).map(s=>s.name);
+    const d=new Date(res.at).toLocaleDateString('sv-SE');
+    return `<details class="hist"><summary><b>${esc(res.label||('Omgång '+res.round))}</b><span class="note" style="margin:0">${esc(d)} · Vinnare: ${esc(win.join(', ')||'ingen')}</span></summary>
+      <h3>Poäng</h3>${scoreTable(res.scores.map(s=>({...s})),t)}<h3>Facit</h3>${answersHtml(res)}</details>`}).join('');
+  rows.sort((a,b)=>b.points-a.points||a.name.localeCompare(b.name,'sv'));
+  $('board').innerHTML=`<div class="panel throne"><h2>Topplistan</h2><p class="lead">Totalt efter ${results.length} ${results.length===1?'omgång':'omgångar'}</p>${podiumHtml(rows)}<h3>Alla själar</h3>${scoreTable(rows,top)}</div>
+    <div class="panel"><h2>Alla veckor</h2><p class="lead">Sparas permanent. Tryck på en vecka för facit och poäng.</p>${hist}</div>`;
+}
+
+function renderHost(){
+  if(!isAdmin){$('host').innerHTML='';return}
+  const sig=JSON.stringify([G,prog]);if(sig===sigHost){counts();return}sigHost=sig;
+  const ph=G?.phase,next='Vecka '+isoWeek();
+  $('host').innerHTML=`<details class="panel host" id="hostBox" ${!G||hostOpen?'open':''}><summary>Kontrollpanel</summary>
+    <p class="note">Alla deltagare kan styra quizet härifrån. När någon trycker på Avslöja visas facit och nästa omgång startar direkt. Inlämnade låtar: <b class="cnt">${songs.length}</b></p>
+    <div class="row">
+      ${!G?'<button id="hStart">Starta första omgången</button>':''}
+      ${ph==='submit'?gateBtn('hGuess','Stäng inlämning och öppna gissning','inl'):''}
+      ${ph==='guess'?gateBtn('hReveal','Avslöja facit och starta nästa omgång','giss'):''}
+      ${ph==='revealing'?'<button id="hReveal">Slutför avslöjandet</button>':''}
+      ${ph==='reveal'?'<button id="hNew">Starta ny omgång</button>':''}
+    </div><p class="msg ${hostNote?'good':''}" id="hMsg">${esc(hostNote||'')}</p>
+    ${G?`<h3>Deltagare (${G.players.length})</h3>
+    <div class="chips">${G.players.map((p,i)=>`<span class="chip">${esc(p)}<button class="x" data-i="${i}" aria-label="Ta bort ${esc(p)}">×</button></span>`).join('')}</div>
+    <div class="addrow"><input id="addName" placeholder="Namn på ny person" autocomplete="off"><button id="hAdd">+ Lägg till</button></div>`:''}
+    <label for="rlabel">${ph==='reveal'?'Namn på nästa omgång':'Namn på omgången'}</label><input id="rlabel" value="${esc(ph==='reveal'?next:(G?.label||next))}">
+    ${G?(ph==='reveal'?'':'<div class="row"><button class="alt" id="hSave">Spara namnet</button></div>'):'<label for="plist">Deltagare, ett namn per rad</label><textarea id="plist"></textarea>'}
+    ${G&&ph!=='reveal'?`<div class="hazard"><button class="nuke" id="hNuke"><span class="nk1">Do not push!</span><span class="nk2">Raderar veckan!</span></button>
+      <div class="nukeAsk" id="nukeAsk" hidden><p><b>Är du helt säker?</b> Alla låtar och gissningar för ${esc(G.label||('omgång '+G.round))} raderas för alla, och veckan börjar om från inlämning. Tidigare veckors facit finns kvar.</p>
+      <div class="row"><button class="nukeYes" id="nukeYes">Ja, radera veckan</button><button class="alt" id="nukeNo">Avbryt</button></div></div></div>`:''}</details>`;
+  $('hostBox').ontoggle=()=>{hostOpen=$('hostBox').open};
+  if($('hSave'))$('hSave').onclick=saveLabel;
+  if($('hAdd')){$('hAdd').onclick=addPlayer;$('addName').onkeydown=e=>{if(e.key==='Enter')addPlayer()}}
+  for(const b of document.querySelectorAll('.chip .x'))b.onclick=()=>{const p=G.players[+b.dataset.i];if(b.dataset.armed)return removePlayer(p);b.dataset.armed='1';b.textContent='Ta bort?';b.classList.add('armed');setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent='×';b.classList.remove('armed')}},4000)};
+  if($('hStart'))$('hStart').onclick=hostSave;
+  if($('hGuess'))$('hGuess').onclick=()=>armed('hGuess',()=>setPhase('guess'));
+  if($('hReveal'))$('hReveal').onclick=()=>armed('hReveal',reveal);
+  if($('hGuessAny'))$('hGuessAny').onclick=()=>armed('hGuessAny',()=>setPhase('guess'));
+  if($('hRevealAny'))$('hRevealAny').onclick=()=>armed('hRevealAny',reveal);
+  if($('hNew'))$('hNew').onclick=newRound;
+  if($('hNuke')){
+    $('hNuke').onclick=()=>{$('nukeAsk').hidden=false;$('hNuke').disabled=true;$('nukeYes').focus()};
+    $('nukeNo').onclick=()=>{$('nukeAsk').hidden=true;$('hNuke').disabled=false};
+    $('nukeYes').onclick=resetWeek;
+  }
+}
+async function resetWeek(){
+  const round=G.round;$('nukeYes').disabled=true;say('hMsg','Raderar veckan…');
+  try{
+    for(const d of (await db.collection('songs').where('round','==',round).get()).docs)await db.collection('songs').doc(d.id).delete();
+    await db.doc('game/state').update({round:round+1,phase:'submit'});
+    hostNote='Veckan är nollställd. Alla kan lämna in på nytt.';sigHost='';renderHost();setTimeout(()=>{hostNote=null},8000);
+  }catch(e){say('hMsg','Kunde inte radera allt: '+(e?.message||e)+'. Tryck igen för att försöka på nytt.','err');if($('nukeYes'))$('nukeYes').disabled=false}
+}
+function armed(id,fn){
+  const b=$(id);
+  if(b.dataset.armed){delete b.dataset.armed;b.classList.remove('armed');fn();return}
+  b.dataset.armed='1';b.dataset.txt=b.textContent;b.textContent='Säker? Tryck igen';b.classList.add('armed');
+  setTimeout(()=>{if(b.dataset.armed){delete b.dataset.armed;b.classList.remove('armed');b.textContent=b.dataset.txt}},4000);
+}
+
+function renderAll(){renderHead();renderProg();renderMain();renderBoard();renderHost()}
+
+async function submitSong(){
+  let name=$('me').value;const url=$('url').value.trim(),r=rk();
+  const isNew=name==='__new';
+  if(isNew){name=$('newName').value.trim().replace(/\s+/g,' ');if(!name)return say('sendMsg','Skriv ditt namn.','err')}
+  if(!name)return say('sendMsg','Välj ditt namn först.','err');
+  if(!okLink(url))return say('sendMsg','Det där ser inte ut som en Spotify-länk. Den ska börja med https://open.spotify.com/','err');
+  $('send').disabled=true;say('sendMsg','Skickar…');
+  try{
+    if(isNew){
+      const hit=G.players.find(p=>p.toLowerCase()===name.toLowerCase());
+      if(hit)name=hit;
+      else{const st=(await db.doc('game/state').get()).data();await db.doc('game/state').update({players:[...(st?.players||G.players),name]})}
+    }
+    const old=myKey[r];
+    const ref=old?.songId?db.collection('songs').doc(old.songId):db.collection('songs').doc();
+    await ref.set({round:G.round,url,at:Date.now()});
+    const kr=db.doc('keys/'+uid);const cur=(await kr.get()).data()||{};
+    await kr.set({rounds:{...(cur.rounds||{}),[r]:{name,url,songId:ref.id,at:Date.now()}}});
+    ls.set('vl-name',name);await markProgress('inl',name);
+  }catch(e){say('sendMsg','Kunde inte spara: '+(e?.message||e),'err');$('send').disabled=false}
+}
+
+async function saveGuess(){
+  const name=$('gme').value,r=rk();
+  if(!name)return say('gMsg','Välj ditt namn högst upp.','err');
+  const picks={};for(const s of document.querySelectorAll('select[data-song]'))if(s.value)picks[s.dataset.song]=s.value;
+  const used=Object.values(picks),dup=used.find((v,i)=>used.indexOf(v)!==i);
+  if(dup)return say('gMsg',`${dup} är vald på flera låtar. Varje person la in en låt.`,'err');
+  $('saveG').disabled=true;say('gMsg','Sparar…');
+  try{
+    const gr=db.doc('guesses/'+uid);const cur=(await gr.get()).data()||{};
+    await gr.set({rounds:{...(cur.rounds||{}),[r]:{name,picks,at:Date.now()}}});
+    ls.set('vl-name',name);await markProgress('giss',name);
+  }catch(e){say('gMsg','Kunde inte spara: '+(e?.message||e),'err');$('saveG').disabled=false}
+}
+
+async function hostSave(){
+  const players=[...new Set($('plist').value.split('\n').map(s=>s.trim()).filter(Boolean))];
+  const label=$('rlabel').value.trim();
+  if(!players.length)return say('hMsg','Skriv in minst ett namn under Deltagare.','err');
+  try{await db.doc('game/state').set({round:1,phase:'submit',players,label})}
+  catch(e){say('hMsg','Kunde inte starta: '+(e?.message||e),'err')}
+}
+async function saveLabel(){
+  try{await db.doc('game/state').update({label:$('rlabel').value.trim()});say('hMsg','Namnet är sparat.','good')}
+  catch(e){say('hMsg','Kunde inte spara: '+(e?.message||e),'err')}
+}
+async function addPlayer(){
+  const n=$('addName').value.trim();
+  if(!n)return say('hMsg','Skriv ett namn först.','err');
+  if(G.players.some(p=>p.toLowerCase()===n.toLowerCase()))return say('hMsg',`${n} finns redan med.`,'err');
+  try{await db.doc('game/state').update({players:[...G.players,n]});say('hMsg',`${n} är tillagd.`,'good')}
+  catch(e){say('hMsg','Kunde inte lägga till: '+(e?.message||e),'err')}
+}
+async function removePlayer(p){
+  try{await db.doc('game/state').update({players:G.players.filter(x=>x!==p)});say('hMsg',`${p} är borttagen. Tidigare resultat finns kvar.`,'good')}
+  catch(e){say('hMsg','Kunde inte ta bort: '+(e?.message||e),'err')}
+}
+async function setPhase(p){try{await db.doc('game/state').update({phase:p})}catch(e){say('hMsg','Fel: '+(e?.message||e),'err')}}
+
+async function reveal(){
+  const r=rk();$('hReveal').disabled=true;say('hMsg','Räknar poäng…');
+  try{
+    const st=(await db.doc('game/state').get()).data();
+    if(!st||st.round!==G.round||(st.phase!=='guess'&&st.phase!=='revealing'))return say('hMsg','Någon annan har redan avslöjat den här omgången.','good');
+    if(st.phase==='guess')await db.doc('game/state').update({phase:'revealing'});
+    const owner={};
+    for(const d of (await db.collection('keys').get()).docs){const k=d.data()?.rounds?.[r];if(k?.songId)owner[k.songId]=k.name}
+    const list=songs.map((s,i)=>({id:s.id,n:i+1,url:s.url,name:owner[s.id]||''}));
+    const scores=[];
+    for(const d of (await db.collection('guesses').get()).docs){
+      const g=d.data()?.rounds?.[r];if(!g?.name)continue;
+      let points=0,max=0;
+      for(const s of list){if(s.name===g.name)continue;max++;if(g.picks?.[s.id]&&g.picks[s.id]===s.name)points++}
+      scores.push({name:g.name,points,max});
+    }
+    await db.doc('results/'+r).set({round:G.round,label:G.label||'',answers:list.map(({n,url,name})=>({n,url,name})),scores,at:Date.now()});
+    await db.doc('game/state').update({round:G.round+1,phase:'submit',label:nextLabel(G.label,G.round)});
+  }catch(e){say('hMsg','Kunde inte räkna: '+(e?.message||e),'err');$('hReveal').disabled=false}
+}
+async function newRound(){
+  const label=$('rlabel').value.trim()||('Omgång '+(G.round+1));
+  try{await db.doc('game/state').update({round:G.round+1,phase:'submit',label})}catch(e){say('hMsg','Fel: '+(e?.message||e),'err')}
+}
+
+function watchSongs(){
+  if(curRk===rk())return;curRk=rk();
+  if(unSongs)unSongs();songs=[];
+  if(!G)return;
+  unSongs=db.collection('songs').where('round','==',G.round).onSnapshot(s=>{songs=s.docs.map(d=>({id:d.id,...d.data()}));renderAll()},e=>say('hMsg','Låtar: '+e.message,'err'));
+  if(unProg)unProg();prog={};
+  unProg=db.doc(progPath()).onSnapshot(s=>{prog=s.data()||{};renderProg();renderHost()},()=>{});
+}
+
+// Vilka som har lämnat in / gissat denna omgång. Bara namn, aldrig vilken låt.
+let prog={},unProg=null;
+const progPath=()=>'game/svar-r'+G.round;
+async function markProgress(kind,name){
+  try{
+    const ref=db.doc(progPath());
+    if(ref.merge)await ref.merge({[kind]:{[uid]:name}});
+    else{const cur=(await ref.get()).data()||{};await ref.set({...cur,[kind]:{...(cur[kind]||{}),[uid]:name}})}
+  }catch(e){}
+}
+function progStat(kind){
+  const done=[...new Set(Object.values(prog[kind]||{}))];
+  const all=[...new Set([...(G?.players||[]),...done])];
+  const missing=all.filter(p=>!done.includes(p));
+  return {done,all,missing,n:all.length-missing.length,tot:all.length};
+}
+// Huvudknappen är låst tills alla är klara; "…ändå" (två tryck) går vidare ändå.
+function gateBtn(id,label,kind){
+  const st=progStat(kind);
+  if(!st.missing.length)return `<button id="${id}">${label}</button>`;
+  return `<button id="${id}" disabled>${label}</button>
+    <button class="alt" id="${id}Any">${kind==='inl'?'Öppna gissning ändå':'Avslöja ändå'}</button>
+    <p class="note gateNote">Låst tills alla är klara. Väntar på ${st.missing.length}: ${esc(st.missing.join(', '))}</p>`;
+}
+function renderProg(){
+  const el=$('prog');if(!el)return;
+  if(!G||(G.phase!=='submit'&&G.phase!=='guess')){el.innerHTML='';return}
+  const kind=G.phase==='submit'?'inl':'giss';
+  const {done,all,n,tot}=progStat(kind),pct=tot?Math.round(100*n/tot):0;
+  el.innerHTML=`<div class="panel prog"><div class="progTop"><b>${kind==='inl'?'Har lämnat in':'Har gissat'}: ${n} av ${tot}</b>${tot&&n>=tot?'<span class="badge">Alla klara!</span>':''}</div>
+    <div class="meter"><i style="width:${pct}%"></i></div>
+    <div class="chips">${all.map(p=>{const ok=done.includes(p);return `<span class="chip ${ok?'ok':'wait'}">${ok?'✓ ':''}${esc(p)}</span>`}).join('')}</div></div>`;
+}
+
+// Firebase-adapter: ger appen samma enkla db-gränssnitt som originalversionen
+const fb=initializeApp(firebaseConfig),auth=getAuth(fb),fs=getFirestore(fb);
+const wDoc=s=>({id:s.id,exists:s.exists(),data:()=>s.data()});
+const wQ=s=>({docs:s.docs.map(wDoc),size:s.size,empty:s.empty});
+const dref=r=>({id:r.id,path:r.path,get:async()=>wDoc(await getDoc(r)),set:d=>setDoc(r,d),merge:d=>setDoc(r,d,{merge:true}),update:d=>updateDoc(r,d),delete:()=>deleteDoc(r),onSnapshot:(n,e)=>onSnapshot(r,s=>n(wDoc(s)),e)});
+const qref=(q,c)=>({where:(f,o,v)=>qref(query(q,where(f,o,v)),c),orderBy:(f,d)=>qref(query(q,orderBy(f,d)),c),get:async()=>wQ(await getDocs(q)),onSnapshot:(n,e)=>onSnapshot(q,s=>n(wQ(s)),e),doc:id=>dref(id?doc(c,id):doc(c))});
+const DB={doc:p=>dref(doc(fs,p)),collection:p=>{const c=collection(fs,p);return qref(c,c)}};
+
+// Ingen inloggning: varje webbläsare får ett osynligt anonymt konto, så appen vet vilken låt som är ens egen.
+let started=false;
+const loadErr=e=>{$('main').innerHTML=`<div class="panel"><p class="msg err">Kunde inte ansluta: ${esc(e?.code||e?.message||e)}</p><p class="note">Ladda om sidan. Hjälper det inte: kontrollera att Anonym inloggning är påslagen i Firebase.</p></div>`};
+onAuthStateChanged(auth,u=>{
+  if(!u){signInAnonymously(auth).catch(loadErr);return}
+  if(started)return;started=true;
+  db=DB;uid=u.uid;isAdmin=true;canWrite=true;
+  $('main').innerHTML='<div class="panel"><p class="note" id="loadNote">Stämmer gitarrerna…</p></div>';
+  const t=setTimeout(()=>{const n=$('loadNote');if(n)n.textContent='Når inte quizet just nu. Kontrollera nätverket och ladda om.'},10000);
+  const fail=e=>{clearTimeout(t);$('main').innerHTML=`<div class="panel"><p class="msg err">Kunde inte läsa quizet: ${esc(e?.code||e?.message||e)}</p></div>`};
+  db.doc('game/state').onSnapshot(s=>{clearTimeout(t);G=s.exists?s.data():null;watchSongs();renderAll()},fail);
+  db.doc('keys/'+uid).onSnapshot(s=>{myKey=s.data()?.rounds||{};renderAll()},()=>{});
+  db.doc('guesses/'+uid).onSnapshot(s=>{myGuess=s.data()?.rounds||{};renderAll()},()=>{});
+  db.collection('results').orderBy('round').onSnapshot(s=>{results=s.docs.map(d=>({id:d.id,...d.data()}));renderAll()},()=>{});
+});
+}
+</script>
+</body>
+</html>
