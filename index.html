@@ -99,7 +99,7 @@ details.hist summary b{font:400 20px Anton,sans-serif}
 .podLegend b{font:400 20px Anton,sans-serif;overflow-wrap:anywhere}
 .pdTitle{grid-column:2;color:var(--muted);font-size:14px}
 .pdPts{grid-row:1/span 2;grid-column:3;font:400 22px Anton,sans-serif;white-space:nowrap}
-@media(prefers-reduced-motion:no-preference){.pdClash{transform-box:fill-box;transform-origin:center;animation:clash .5s ease-in-out infinite alternate}@keyframes clash{from{transform:scale(.8) rotate(-8deg)}to{transform:scale(1.12) rotate(8deg)}}.pdShake{animation:shake .35s steps(2) infinite}@keyframes shake{0%{transform:translate(-1.5px,0)}50%{transform:translate(1.5px,-1px)}100%{transform:translate(0,1px)}}.pdZap,.pdBolts{animation:zap 3.2s infinite}.pdEye{animation:glare 2.4s ease-in-out infinite}@keyframes glare{50%{opacity:.35}}.pdFlames{animation:lick 1.2s ease-in-out infinite alternate;transform-origin:180px 182px}@keyframes lick{to{transform:scaleY(1.12)}}}
+@media(prefers-reduced-motion:no-preference){.pdClash{transform-box:fill-box;transform-origin:center;animation:clash 1.2s ease-in-out infinite alternate}@keyframes clash{from{transform:scale(.94) rotate(-3deg)}to{transform:scale(1.04) rotate(3deg)}}.pdShake{animation:shake 1.6s ease-in-out infinite alternate}@keyframes shake{from{transform:translate(-.4px,0)}to{transform:translate(.4px,-.3px)}}.pdZap,.pdBolts{animation:zap 3.2s infinite}.pdEye{animation:glare 2.4s ease-in-out infinite}@keyframes glare{50%{opacity:.35}}.pdFlames{animation:lick 1.2s ease-in-out infinite alternate;transform-origin:180px 182px}@keyframes lick{to{transform:scaleY(1.12)}}}
 .prog .progTop{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font:400 22px Anton,sans-serif}
 .prog .chips{margin-top:12px}
 .prog .chip{padding:5px 12px;font-size:15px}
@@ -161,7 +161,7 @@ details.host summary{cursor:pointer;min-height:48px;display:flex;align-items:cen
   <div id="board"></div>
   <div id="host"></div>
 </div></main>
-<p class="note" style="text-align:center;padding:0 0 28px;margin:0">Version 26/11 kl. 11:37</p>
+<p class="note" style="text-align:center;padding:0 0 28px;margin:0">Version 26/11 kl. 11:41</p>
 
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
@@ -437,11 +437,8 @@ function podiumHtml(rows,teaser){
           <path d="M21-29L12-46M30-30L44-40" stroke="#e3221c" stroke-opacity=".6" stroke-width="5.5" stroke-linecap="round"/>
           <path d="M21-29L12-46M30-30L44-40" stroke="#0b0b0c" stroke-width="3.8" stroke-linecap="round"/>
           <path d="M43-48a8 8 0 0 1 8 6M47-52a13 13 0 0 1 9 11" fill="none" stroke="#e6e8ec" stroke-opacity=".7" stroke-width="1.2" stroke-linecap="round"/>
-          <path d="M31-2L42 6" stroke="#0b0b0c" stroke-width="4" stroke-linecap="round"/>
           <use href="#pdSword" transform="translate(12 -46) scale(-1 1) rotate(-24)"/>
         </g>
-        <!-- utropstecken -->
-        <path d="M44-66L45-56" stroke="#ffcc00" stroke-width="2.6" stroke-linecap="round"/><circle cx="45.3" cy="-51.5" r="1.5" fill="#ffcc00"/>
       </g>
       <!-- stenar som rasar från kanten -->
       <g fill="#6e717a"><rect x="40" y="6" width="3" height="2.5" rx=".6" transform="rotate(20 41 7)"/><rect x="45" y="15" width="2.4" height="2" rx=".5"/><rect x="38" y="22" width="2" height="1.8" rx=".5"/></g>
