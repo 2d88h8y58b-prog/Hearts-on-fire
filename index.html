@@ -97,7 +97,7 @@ details.hist summary b{font:400 20px Anton,sans-serif}
 .podLegend b{font:400 20px Anton,sans-serif;overflow-wrap:anywhere}
 .pdTitle{grid-column:2;color:var(--muted);font-size:14px}
 .pdPts{grid-row:1/span 2;grid-column:3;font:400 22px Anton,sans-serif;white-space:nowrap}
-@media(prefers-reduced-motion:no-preference){.pdZap,.pdBolts{animation:zap 3.2s infinite}.pdEye{animation:glare 2.4s ease-in-out infinite}@keyframes glare{50%{opacity:.35}}.pdFlames{animation:lick 1.2s ease-in-out infinite alternate;transform-origin:180px 182px}@keyframes lick{to{transform:scaleY(1.12)}}}
+@media(prefers-reduced-motion:no-preference){.pdClash{transform-box:fill-box;transform-origin:center;animation:clash .5s ease-in-out infinite alternate}@keyframes clash{from{transform:scale(.8) rotate(-8deg)}to{transform:scale(1.12) rotate(8deg)}}.pdShake{animation:shake .35s steps(2) infinite}@keyframes shake{0%{transform:translate(-1.5px,0)}50%{transform:translate(1.5px,-1px)}100%{transform:translate(0,1px)}}.pdZap,.pdBolts{animation:zap 3.2s infinite}.pdEye{animation:glare 2.4s ease-in-out infinite}@keyframes glare{50%{opacity:.35}}.pdFlames{animation:lick 1.2s ease-in-out infinite alternate;transform-origin:180px 182px}@keyframes lick{to{transform:scaleY(1.12)}}}
 .prog .progTop{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font:400 22px Anton,sans-serif}
 .prog .chips{margin-top:12px}
 .prog .chip{padding:5px 12px;font-size:15px}
@@ -159,7 +159,7 @@ details.host summary{cursor:pointer;min-height:48px;display:flex;align-items:cen
   <div id="board"></div>
   <div id="host"></div>
 </div></main>
-<p class="note" style="text-align:center;padding:0 0 28px;margin:0">Version 26/11 kl. 11:06</p>
+<p class="note" style="text-align:center;padding:0 0 28px;margin:0">Version 26/11 kl. 11:16</p>
 
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
@@ -321,19 +321,49 @@ function scoreTable(rows,top){
 const TITLES=['Mörkrets härskare','Första lärjungen','Ödmjuk tjänare'];
 function fitName(s,max,w){return Math.max(9,Math.min(max,Math.floor(w/(Math.max(1,s.length)*0.52))))}
 function podiumHtml(rows,teaser){
-  const p=[rows[0],rows[1],rows[2]];
-  const short=n=>n.length>12?n.split(/\s+/)[0]:n;
-  const nm=(r,x,y,max,w)=>r?`<text x="${x}" y="${y}" text-anchor="middle" class="pdName" font-size="${fitName(short(r.name),max,w)}">${esc(short(r.name))}</text>`:`<text x="${x}" y="${y}" text-anchor="middle" class="pdName pdEmpty" font-size="14">ledig plats</text>`;
-  // Alla utanför topp 3 står på marken framför pallen, max 6 per rad
-  const rest=teaser?[]:rows.slice(3),PER=5,crowdRows=Math.ceil(rest.length/PER),EXTRA=crowdRows?crowdRows*96+14:0,H=364+EXTRA;
+  // Lika poäng = samma plats. Varje pelare bär en grupp; nästa poäng går till nästa pelare.
+  const groups=[];
+  for(const r of rows){const g=groups[groups.length-1];if(!teaser&&g&&g[0].points===r.points)g.push(r);else groups.push([r])}
+  const P=[groups[0],groups[1],groups[2]];
+  const first=n=>String(n).split(/\s+/)[0];
+  const short=n=>n.length>12?first(n):n;
+  const label=g=>g.length===1?short(g[0].name):g.length===2?g.map(r=>first(r.name)).join(' & '):`${first(g[0].name)} +${g.length-1}`;
+  const nm=(g,x,y,max,w)=>g?`<text x="${x}" y="${y}" text-anchor="middle" class="pdName" font-size="${fitName(label(g),max,w)}">${esc(label(g))}</text>`:`<text x="${x}" y="${y}" text-anchor="middle" class="pdName pdEmpty" font-size="14">ledig plats</text>`;
+  // Alla utanför pallen står på marken framför den, 5 per rad
+  const rest=[];groups.slice(3).forEach((g,gi)=>g.forEach(r=>rest.push({...r,rank:gi+4})));
+  const PER=5,crowdRows=Math.ceil(rest.length/PER),EXTRA=crowdRows?crowdRows*96+14:0,H=364+EXTRA;
   const crowd=rest.map((r,i)=>{
     const row=Math.floor(i/PER),col=i%PER,inRow=Math.min(PER,rest.length-row*PER);
     const x=Math.round(180+(col-(inRow-1)/2)*68),y=330+row*96+70;
-    const nmS=r.name.length>9?r.name.split(/\s+/)[0]:r.name;
+    const nmS=r.name.length>9?first(r.name):r.name;
     return `<use href="#pdFan" transform="translate(${x} ${y}) scale(${i%2?-1.45:1.45} 1.45)"/>
       <text x="${x}" y="${y+16}" text-anchor="middle" class="pdName" font-size="${fitName(nmS,14,64)}">${esc(nmS)}</text>
-      <text x="${x}" y="${y+30}" text-anchor="middle" class="pdFanPts">${i+4}. · ${r.points} p</text>`}).join('');
-  const svg=`<svg class="podium" viewBox="0 -34 360 ${H}" role="img" aria-label="Prispall: ${esc(p.filter(Boolean).map((r,i)=>(i+1)+'. '+r.name).join(', '))}">
+      <text x="${x}" y="${y+30}" text-anchor="middle" class="pdFanPts">${r.rank}. · ${r.points} p</text>`}).join('');
+  // Guden; vid delad etta trängs två eller tre gudar och deras blixtar krockar i en explosion
+  const god=(dx,sc)=>`<g class="pdGod" transform="translate(${180+dx} 182) scale(${sc}) translate(-180 -182)">
+    <circle cx="180" cy="96" r="44" fill="#ff3b2f" opacity=".18" filter="url(#pdBlur)"/>
+    <path d="M180 92L134 182H226Z" fill="url(#pdCape)" stroke="#ff3b2f" stroke-opacity=".55"/>
+    <path d="M168 96L160 182H200L192 96Z" fill="#0b0b0c" stroke="#ff3b2f" stroke-opacity=".5"/>
+    <path d="M160 100L148 90L162 95ZM200 100L212 90L198 95Z" fill="#a3a7b0"/>
+    <path d="M168 101L146 72L139 52M192 101L214 72L221 52" fill="none" stroke="#ff3b2f" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round" opacity=".75"/><path d="M168 101L146 72L139 52M192 101L214 72L221 52" fill="none" stroke="#0b0b0c" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="180" cy="84" r="11" fill="#0b0b0c" stroke="#ff3b2f" stroke-opacity=".75" stroke-width="1.5"/>
+    <path d="M172 78C158 74 149 60 155 44C159 57 166 65 175 72ZM188 78C202 74 211 60 205 44C201 57 194 65 185 72Z" fill="#e8e1d0"/>
+    <circle cx="176" cy="84" r="2.1" fill="#ff3b2f" class="pdEye"/><circle cx="184" cy="84" r="2.1" fill="#ff3b2f" class="pdEye"/>
+    <g fill="none" stroke="#ffcc00" stroke-width="2.6" stroke-linejoin="round" class="pdZap">
+      <polyline points="139,52 130,38 141,34 128,12"/><polyline points="221,52 230,38 219,34 232,12"/>
+    </g>
+  </g>`;
+  const n0=P[0]?P[0].length:0;
+  const top=!n0?'':n0===1?god(0,1.3)
+    :n0===2?god(-34,1)+god(34,1)+'<use href="#pdBurst" transform="translate(180 20) scale(1.3)"/>'
+    :god(-44,.82)+god(44,.82)+god(0,.82)+'<use href="#pdBurst" transform="translate(180 36) scale(1.2)"/>';
+  // Lärjungarna; vid delad plats blir det ett slagsmålsmoln på pelaren
+  const plinth=(g,x,y,sc,mirror)=>!g?'':g.length===1
+    ?`<use href="#pdCult" transform="translate(${mirror?x+44:x-44} ${y}) scale(${mirror?-1.4:1.4} 1.4)"/>`
+    :`<use href="#pdBrawl" transform="translate(${x} ${y}) scale(${sc})"/>`;
+  const burstPts=Array.from({length:16},(_,i)=>{const a=i*Math.PI/8,r=i%2?7:18;return (Math.cos(a)*r).toFixed(1)+','+(Math.sin(a)*r).toFixed(1)}).join(' ');
+  const star='M0-5L1.3-1.3L5 0L1.3 1.3L0 5L-1.3 1.3L-5 0L-1.3-1.3Z';
+  const svg=`<svg class="podium" viewBox="0 -34 360 ${H}" role="img" aria-label="Prispall: ${esc(P.filter(Boolean).map((g,i)=>['Etta','Tvåa','Trea'][i]+': '+g.map(r=>r.name).join(' och ')).join(', '))}">
   <defs>
     <radialGradient id="pdGlow" cx="50%" cy="38%" r="55%"><stop offset="0" stop-color="#ff3b2f" stop-opacity=".75"/><stop offset=".45" stop-color="#8f0d08" stop-opacity=".35"/><stop offset="1" stop-color="#0b0b0c" stop-opacity="0"/></radialGradient>
     <linearGradient id="pdStone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a4a52"/><stop offset=".12" stop-color="#2c2c32"/><stop offset="1" stop-color="#141417"/></linearGradient>
@@ -355,6 +385,22 @@ function podiumHtml(rows,teaser){
       <path d="M-7-27Q-10-16-8-11L-4-20ZM7-27Q10-16 8-11L4-20Z" fill="#0b0b0c" stroke="#e3221c" stroke-opacity=".45"/>
       <circle cy="-28" r="6.5" fill="#0b0b0c" stroke="#e3221c" stroke-opacity=".6"/>
     </g>
+    <g id="pdBurst"><g class="pdClash">
+      <polygon points="${burstPts}" fill="#ffcc00" stroke="#e3221c" stroke-width="2" stroke-linejoin="round"/>
+      <circle r="4.5" fill="#fff"/>
+    </g></g>
+    <g id="pdBrawl"><g class="pdShake">
+      <path d="M-28-24L-45-35M28-28L46-41M-14-3L-22 3M14-3L23 2" stroke="#0b0b0c" stroke-width="4.5" stroke-linecap="round"/>
+      <path d="M-28-24L-45-35M28-28L46-41" stroke="#e3221c" stroke-opacity=".5" stroke-width="6.5" stroke-linecap="round" opacity=".5"/>
+      <circle cx="-46" cy="-36" r="4" fill="#0b0b0c" stroke="#e3221c" stroke-opacity=".7"/><circle cx="47" cy="-42" r="4" fill="#0b0b0c" stroke="#e3221c" stroke-opacity=".7"/>
+      <g fill="#24242a" stroke="#e3221c" stroke-opacity=".55">
+        <circle cx="-22" cy="-18" r="13"/><circle cx="26" cy="-14" r="11"/><circle cx="-6" cy="-28" r="15"/><circle cx="12" cy="-24" r="14"/><circle cx="-28" cy="-8" r="9"/><circle cx="20" cy="-6" r="10"/><circle cx="1" cy="-11" r="15"/>
+      </g>
+      <path d="M-16-21q6-6 12 0t12 0M-9-10q6-5 12 0" stroke="#5c5c66" stroke-width="1.6" fill="none"/>
+      <path d="M-12-41C-10-51 2-51 4-41Z" fill="#17171a" stroke="#e3221c" stroke-opacity=".6"/>
+      <path d="M8-38C12-47 22-45 22-36Z" fill="#17171a" stroke="#e3221c" stroke-opacity=".6"/>
+      <g fill="#ffcc00"><path transform="translate(-34 -46)" d="${star}"/><path transform="translate(34 -54)" d="${star}"/><path transform="translate(-2 -58) scale(.8)" d="${star}"/></g>
+    </g></g>
   </defs>
   <rect y="-34" width="360" height="${H}" fill="url(#pdGlow)"/>
   <g class="pdBolts" fill="none" stroke="#ffcc00" stroke-width="2" stroke-linejoin="round" opacity=".55">
@@ -363,38 +409,25 @@ function podiumHtml(rows,teaser){
   <g fill="url(#pdFire)" class="pdFlames">
     <path d="M124 182Q130 150 138 182Z"/><path d="M134 182Q144 136 152 182Z"/><path d="M208 182Q216 138 226 182Z"/><path d="M222 182Q230 152 236 182Z"/><path d="M150 182Q156 160 162 182Z"/><path d="M198 182Q204 160 210 182Z"/>
   </g>
-  ${p[0]?`<g class="pdGod" transform="translate(180 182) scale(1.3) translate(-180 -182)">
-    <circle cx="180" cy="96" r="44" fill="#ff3b2f" opacity=".18" filter="url(#pdBlur)"/>
-    <path d="M180 92L134 182H226Z" fill="url(#pdCape)" stroke="#ff3b2f" stroke-opacity=".55"/>
-    <path d="M168 96L160 182H200L192 96Z" fill="#0b0b0c" stroke="#ff3b2f" stroke-opacity=".5"/>
-    <path d="M160 100L148 90L162 95ZM200 100L212 90L198 95Z" fill="#a3a7b0"/>
-    <path d="M168 101L146 72L139 52M192 101L214 72L221 52" fill="none" stroke="#ff3b2f" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round" opacity=".75"/><path d="M168 101L146 72L139 52M192 101L214 72L221 52" fill="none" stroke="#0b0b0c" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="180" cy="84" r="11" fill="#0b0b0c" stroke="#ff3b2f" stroke-opacity=".75" stroke-width="1.5"/>
-    <path d="M172 78C158 74 149 60 155 44C159 57 166 65 175 72ZM188 78C202 74 211 60 205 44C201 57 194 65 185 72Z" fill="#e8e1d0"/>
-    <circle cx="176" cy="84" r="2.1" fill="#ff3b2f" class="pdEye"/><circle cx="184" cy="84" r="2.1" fill="#ff3b2f" class="pdEye"/>
-    <g fill="none" stroke="#ffcc00" stroke-width="2.6" stroke-linejoin="round" class="pdZap">
-      <polyline points="139,52 130,38 141,34 128,12"/><polyline points="221,52 230,38 219,34 232,12"/>
-    </g>
-  </g>`:''}
+  ${top}
   <path d="M120 182H240V330H120Z" fill="url(#pdStone)"/><path d="M120 182H240" stroke="#8a8d96" stroke-width="2"/>
   <path d="M20 230H120V330H20Z" fill="url(#pdStone)"/><path d="M20 230H120" stroke="#8a8d96" stroke-width="2"/>
   <path d="M240 250H340V330H240Z" fill="url(#pdStone)"/><path d="M240 250H340" stroke="#8a8d96" stroke-width="2"/>
   <path d="M150 300L158 286L154 274M214 198L206 210M44 316L52 304L48 296M318 270L310 282" stroke="#000" stroke-opacity=".55" fill="none"/>
-  ${p[1]?'<use href="#pdCult" transform="translate(26 230) scale(1.4)"/>':''}
-  ${p[2]?'<use href="#pdCult" transform="translate(334 250) scale(-1.4 1.4)"/>':''}
+  ${plinth(P[1],70,230,1.1,false)}${plinth(P[2],290,250,1,true)}
   <text x="180" y="226" text-anchor="middle" class="pdNum" font-size="40">I</text>
   <text x="70" y="268" text-anchor="middle" class="pdNum" font-size="30">II</text>
   <text x="290" y="284" text-anchor="middle" class="pdNum" font-size="26">III</text>
-  ${nm(p[0],180,262,22,112)}${nm(p[1],70,300,17,92)}${nm(p[2],290,310,16,92)}
+  ${nm(P[0],180,262,22,112)}${nm(P[1],70,300,17,92)}${nm(P[2],290,310,16,92)}
   ${EXTRA?`<rect y="330" width="360" height="${EXTRA}" fill="url(#pdGround)"/><path d="M0 330H360" stroke="#e3221c" stroke-opacity=".35"/>`:''}
   ${crowd}
   <rect y="312" width="360" height="18" fill="#0b0b0c" opacity=".55" filter="url(#pdBlur)"/>
 </svg>`;
   if(teaser)return `<figure class="podWrap">${svg}</figure>`;
-  const tie=rows[1]&&rows[0].points===rows[1].points;
-  const crowdList=rest.length?`<p class="crowdList"><b>Folkhopen:</b> ${rest.map((r,i)=>`${i+4}. ${esc(r.name)} ${r.points} p`).join(' · ')}</p>`:'';
-  const legend=`<ol class="podLegend">${p.map((r,i)=>r?`<li><span class="pdRank">${['I','II','III'][i]}</span><b>${esc(r.name)}</b><span class="pdTitle">${TITLES[i]}</span><span class="pdPts">${r.points} p</span></li>`:'').join('')}</ol>`;
-  return `<figure class="podWrap">${svg}${legend}${crowdList}${tie?'<p class="note">Delad tron! Lika poäng i toppen, tronen går till den som kommer först i alfabetet.</p>':''}</figure>`;
+  const crowdList=rest.length?`<p class="crowdList"><b>Folkhopen:</b> ${rest.map(r=>`${r.rank}. ${esc(r.name)} ${r.points} p`).join(' · ')}</p>`:'';
+  const legend=`<ol class="podLegend">${P.map((g,i)=>g?g.map(r=>`<li><span class="pdRank">${['I','II','III'][i]}</span><b>${esc(r.name)}</b><span class="pdTitle">${TITLES[i]}${g.length>1?' (delad plats)':''}</span><span class="pdPts">${r.points} p</span></li>`).join(''):'').join('')}</ol>`;
+  const note=n0>1?`<p class="note">Delad tron! ${n0} härskare slåss om makten.</p>`:'';
+  return `<figure class="podWrap">${svg}${legend}${crowdList}${note}</figure>`;
 }
 function renderBoard(){
   const sig=JSON.stringify(results.map(x=>x.id+x.at));if(sig===sigBoard)return;sigBoard=sig;
